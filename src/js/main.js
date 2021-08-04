@@ -112,20 +112,66 @@ const haushaltsbuch = {
         });
     },
 
-    eintraege_ausgeben() {
-        console.clear();
-        this.eintraege.forEach(function(eintrag) {
-            console.log(`Titel: ${eintrag.get("titel")}\n`
-                + `Typ: ${eintrag.get("typ")}\n`
-                + `Betrag: ${(eintrag.get("betrag") / 100).toFixed(2)} €\n`
-                + `Datum: ${eintrag.get("datum").toLocaleDateString("de-DE", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit"
-                })}`
-            );
-        });
+
+
+    html_eintrag_generieren(eintrag){
+        let listenpunkt = document.createElement("li");
+        if (eintrag.get("typ") === "einnahme") {
+            listenpunkt.setAttribute("class", "einnahme");
+        } else if (eintrag.get("typ") === "ausgabe") {
+            listenpunkt.setAttribute("class", "ausgabe");
+        }
+        listenpunkt.setAttribute("data-timestamp", eintrag.get("timestamp"));    
+
+        let datum = document.createElement("span");
+        datum.setAttribute("class", "datum");
+        datum.textContent = eintrag.get("datum").toLocaleDateString("de-DE", {
+                                        year: "numeric",
+                                        month: "2-digit",
+                                        day: "2-digit"
+                                    });
+        listenpunkt.insertAdjacentElement("afterbegin", datum);
+        
+        let titel = document.createElement("span");
+        titel.setAttribute("class", "titel");
+        titel.textContent = eintrag.get("titel")
+        datum.insertAdjacentElement("afterend", titel);
+
+        let betrag = document.createElement("span");
+        betrag.setAttribute("class", "betrag");
+        betrag.textContent = `${(eintrag.get("betrag")/100).toFixed(2).replace(/\./, ",")} €`;
+        titel.insertAdjacentElement("afterend", betrag);
+
+        let button = document.createElement("button");
+        button.setAttribute("class", "entfernen-button");
+        betrag.insertAdjacentElement("afterend", button);
+
+        let icon = document.createElement("i");
+        icon.setAttribute("class", "fas fa-trash");
+        button.insertAdjacentElement("afterbegin", icon);
+
+        return listenpunkt;
     },
+
+    eintraege_anzeigen() {
+        //überprüfen ob eine ul bereits vorhanden ist
+        document.querySelectorAll(".monatsliste ul").forEach(eintragsliste => {
+           eintragsliste.remove();
+       });
+
+        //ul erstellen
+        let eintragsliste = document.createElement("ul");
+        //über Einträge [] itterieren
+        for(let eintrag of this.eintraege) {
+            // HTML-Eintrag in ul einsetzen
+            eintragsliste.insertAdjacentElement("beforeend", this.html_eintrag_generieren(eintrag));
+        }
+
+        // ul in den article mit der Klasse Monatsliste einsetzen
+        document.querySelector(".monatsliste").insertAdjacentElement("afterbegin", eintragsliste);
+    },
+
+
 
     gesamtbilanz_erstellen() {
         let neue_gesamtbilanz = new Map();
@@ -150,24 +196,97 @@ const haushaltsbuch = {
         this.gesamtbilanz = neue_gesamtbilanz;
     },
 
-    gesamtbilanz_ausgeben() {
-        console.log(`Einnahmen: ${(this.gesamtbilanz.get("einnahmen") / 100).toFixed(2)} €\n`
-            + `Ausgaben: ${(this.gesamtbilanz.get("ausgaben") / 100).toFixed(2)} €\n`
-            + `Bilanz: ${(this.gesamtbilanz.get("bilanz") / 100).toFixed(2)} €\n`
-            + `Bilanz ist positiv: ${(this.gesamtbilanz.get("bilanz") / 100) >= 0}`
-        );
+
+//     <aside id="gesamtbilanz">
+//     <h1>Gesamtbilanz</h1>
+//     <div class="gesamtbilanz-zeile einnahmen"><span>Einnahmen:</span><span>0,00€</span></div>
+//     <div class="gesamtbilanz-zeile ausgaben"><span>Ausgaben:</span><span>0,00€</span></div>
+//     <div class="gesamtbilanz-zeile bilanz"><span>Bilanz:</span><span class="positiv">0,00€</span></div>
+// </aside>
+
+    html_gesamtbilanz_generieren() {
+                //anhand der aktuellen Gesamtbilanz die Gesamtbilanz generieren
+                //neue gesamtbilanz anzeigen(html_Gesamtbilanz_generieren() nehmen)
+                let gesamtbilanz = document.createElement("aside");
+                gesamtbilanz.setAttribute("id", "gesamtbilanz");
+        
+                let h1 = document.createElement("h1");
+                h1.textContent = "Gesamtbilanz";
+                gesamtbilanz.insertAdjacentElement("afterbegin", h1);
+
+                //Einnahmen:
+                let einnahmen_div = document.createElement("div");
+
+                einnahmen_div.setAttribute("class", "gesamtbilanz-zeile einnahmen");
+
+                let einnahmen_titel = document.createElement("span");
+                einnahmen_titel.textContent = "Einnahmen:";
+                einnahmen_div.insertAdjacentElement("afterbegin", einnahmen_titel);
+
+                let einnahmen_betrag = document.createElement("span");
+                einnahmen_betrag.textContent = `${(this.gesamtbilanz.get("einnahmen")/100).toFixed(2).replace(/\./, ",")} €`;
+                einnahmen_div.insertAdjacentElement("beforeend", einnahmen_betrag);
+
+                gesamtbilanz.insertAdjacentElement("beforeend", einnahmen_div);
+
+                //Ausgaben:
+                let ausgaben_div = document.createElement("div");
+                ausgaben_div.setAttribute("class", "gesamtbilanz-zeile ausgaben");
+
+                let ausgaben_titel = document.createElement("span");
+                ausgaben_titel.textContent = "Ausgaben:";
+                ausgaben_div.insertAdjacentElement("afterbegin", ausgaben_titel);
+
+                let ausgaben_betrag = document.createElement("span");
+                ausgaben_betrag.textContent = `${(this.gesamtbilanz.get("ausgaben")/100).toFixed(2).replace(/\./, ",")} €` ;
+                ausgaben_div.insertAdjacentElement("beforeend", ausgaben_betrag);
+
+                gesamtbilanz.insertAdjacentElement("beforeend", ausgaben_div);
+
+                //Bilanz
+                let bilanz_div = document.createElement("div");
+                bilanz_div.setAttribute("class", "gesamtbilanz-zeile bilanz");
+
+                let bilanz_titel = document.createElement("span");
+                bilanz_titel.textContent = "Bilanz:";
+                bilanz_div.insertAdjacentElement("afterbegin", bilanz_titel);
+
+                let bilanz_betrag = document.createElement("span");
+                if(this.gesamtbilanz.get("bilanz") >= 0) {
+                    bilanz_betrag.setAttribute("class", "positiv");  
+                } else if (this.gesamtbilanz.get("bilanz") < 0) {
+                    bilanz_betrag.setAttribute("class", "negativ");
+                 }
+                bilanz_betrag.textContent =`${(this.gesamtbilanz.get("bilanz")/100).toFixed(2).replace(/\./, ",")} €` ;
+                bilanz_div.insertAdjacentElement("beforeend", bilanz_betrag);
+
+                gesamtbilanz.insertAdjacentElement("beforeend", bilanz_div);
+
+                return gesamtbilanz;
     },
 
+
+    gesamtbilanz_anzeigen() {
+        // prüfen ob bereits Gesamtbilanz angezeigt wird, ggf Gesamtbilanz entfernen
+        document.querySelectorAll("#gesamtbilanz").forEach(function(gesamtbilanz) {
+           gesamtbilanz.remove();
+        });
+
+        document.querySelector("body").insertAdjacentElement("beforeend", this.html_gesamtbilanz_generieren());
+        
+       },
+    
     eintrag_hinzufuegen() {
         let weiterer_eintrag = true;
         while (weiterer_eintrag) {
             this.eintrag_erfassen();
             //Prozess wird nur fortgesetzt wenn kein Fehler
             if(this.fehler.length === 0){            
+                //Methodenaufrufe anpassen
                 this.eintraege_sortieren();
-                this.eintraege_ausgeben();
+                this.eintraege_anzeigen();
                 this.gesamtbilanz_erstellen();
-                this.gesamtbilanz_ausgeben();
+                this.gesamtbilanz_anzeigen();
             }else {
                 //Array wird geleert, ansonsten kann man nichts mehr hinzufügen
                 this.fehler = [];
