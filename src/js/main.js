@@ -255,7 +255,7 @@ const haushaltsbuch = {
 
 
     gesamtbilanz_anzeigen() {
-        // prüfen ob bereits Gesamtbilanz angezeigt wird, ggf Gesamtbilanz entfernen
+        // prüfen ob bereits Gesamtbilanz angezeigt wird, ggf Gesamtbilanz entfernen.
         document.querySelectorAll("#gesamtbilanz").forEach(gesamtbilanz => gesamtbilanz.remove());
 
         document.querySelector("body").insertAdjacentElement("beforeend", this.html_gesamtbilanz_generieren());
